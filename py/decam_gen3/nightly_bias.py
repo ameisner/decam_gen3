@@ -55,14 +55,47 @@ def _proc(caldat, repo_name='repo', script_name='launch.sh'):
     _patch_raw_headers(flist)
     biasexps = _get_bias_expnums(flist, as_string=True)
 
-    print(biasexps)
-
     # figure out the exposure ID's of the master bias frames downloaded
     #    either from the API query result or else from the headers
     # patch the biases for e.g., missing HUMIDITY
     # generate the launch script
 
+    cmds = []
+    cmds.append('eups list lsst_distrib')
+    cmds.append('REPO=repo')
+    cmds.append('LOGDIR=logs')
+    cmds.append('mkdir $LOGDIR')
+    cmds.append('buler create $REPO')
+    cmds.append('butler register-instrument $REPO lsst.obs.decam.DarkEnergyCamera')
+    cmds.append('butler write-curated-calibrations $REPO lsst.obs.decam.DarkEnergyCamera')
 
+    print('')
+    cmds.append("LOGFILE=$LOGDIR/ingest_bias.log; \\")
+    cmds.append("BIASFILES=bias/*.fz; \\")
+    cmds.append("date | tee $LOGFILE; \\")
+    cmds.append("butler ingest-raws $REPO $BIASFILES --transfer link \\")
+    cmds.append("2>&1 | tee -a $LOGFILE; \\")
+    cmds.append("date | tee -a $LOGFILE")
+
+    cmds.append('')
+
+    cmds.append("BIASEXPS=" + biasexps)
+    cmds.append('DATAQUERY="detector=18"')
+
+    cmds.append('LOGFILE=$LOGDIR/cpBias.log; \\')
+    cmds.append('date | tee $LOGFILE; \\')
+    cmds.append('pipetask --long-log run --register-dataset-types -j 10 \\')
+    cmds.append('-b $REPO --instrument lsst.obs.decam.DarkEnergyCamera \\')
+    cmds.append('-i DECam/raw/all,DECam/calib/curated/19700101T000000Z,DECam/calib/unbounded \\')
+    cmds.append('-o DECam/calib/bias \\')
+    cmds.append('-p config/cpBias.yaml \\')
+    cmds.append('-d "instrument=\'DECam\' AND exposure IN $BIASEXPS AND $DATAQUERY" \\')
+    cmds.append('2>&1 | tee -a $LOGFILE; \\')
+    cmds.append('date | tee -a $LOGFILE')
+
+
+    for cmd in cmds:
+        print(cmd)
 
 if __name__ == "__main__":
     descr = 'prepare creation of a master bias for a given night'
