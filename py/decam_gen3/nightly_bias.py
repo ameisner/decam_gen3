@@ -9,6 +9,12 @@ Pipeline driver for preparing creation of a master bias for a given night.
 import argparse
 import decam_reduce.util as util
 import os
+import glob
+
+def _patch_raw_headers(flist):
+    for f in flist:
+        print("PATCHING HEADER FOR " + f)
+        util.patch_raw_header(f)
 
 def _proc(caldat, repo_name='repo', script_name='launch.sh'):
     """
@@ -29,6 +35,9 @@ def _proc(caldat, repo_name='repo', script_name='launch.sh'):
     assert(os.path.exists(outdir))
     util.download_images(result, outdir)
 
+    flist = glob.glob(os.path.join(outdir, '*.fz'))
+    flist.sort()    
+    _patch_raw_headers(flist)
 
 
     # figure out the exposure ID's of the master bias frames downloaded
