@@ -65,7 +65,7 @@ def _proc(caldat, repo_name='repo', script_name='launch.sh'):
     cmds.append('REPO=repo')
     cmds.append('LOGDIR=logs')
     cmds.append('mkdir $LOGDIR')
-    cmds.append('buler create $REPO')
+    cmds.append('butler create $REPO')
     cmds.append('butler register-instrument $REPO lsst.obs.decam.DarkEnergyCamera')
     cmds.append('butler write-curated-calibrations $REPO lsst.obs.decam.DarkEnergyCamera')
 
@@ -79,7 +79,7 @@ def _proc(caldat, repo_name='repo', script_name='launch.sh'):
 
     cmds.append('')
 
-    cmds.append("BIASEXPS=" + biasexps)
+    cmds.append(biasexps)
     cmds.append('DATAQUERY="detector=18"')
 
     cmds.append('LOGFILE=$LOGDIR/cpBias.log; \\')
@@ -93,9 +93,14 @@ def _proc(caldat, repo_name='repo', script_name='launch.sh'):
     cmds.append('2>&1 | tee -a $LOGFILE; \\')
     cmds.append('date | tee -a $LOGFILE')
 
-
+    _cmds = ''
     for cmd in cmds:
-        print(cmd)
+        _cmds += cmd + '\n'
+
+    with open(script_name, 'wb') as f:
+        f.write(_cmds.encode('ascii'))
+
+    util.add_exec_permission(script_name)
 
 if __name__ == "__main__":
     descr = 'prepare creation of a master bias for a given night'
