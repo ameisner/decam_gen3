@@ -10,11 +10,26 @@ import argparse
 import decam_reduce.util as util
 import os
 import glob
+import astropy.io.fits as fits
 
 def _patch_raw_headers(flist):
     for f in flist:
         print("PATCHING HEADER FOR " + f)
         util.patch_raw_header(f)
+
+def _get_bias_expnums(flist, as_string=True):
+
+    expids = []
+    for f in flist:
+        h = fits.getheader(f)
+        expids.append(h['EXPNUM'])
+
+    expids.sort() # don't see this as necessary but w/e
+    if not as_string:
+        return expids
+    else:
+        expids = tuple(expids)
+        return f'BIASEXPS="{expids}"'
 
 def _proc(caldat, repo_name='repo', script_name='launch.sh'):
     """
@@ -38,7 +53,9 @@ def _proc(caldat, repo_name='repo', script_name='launch.sh'):
     flist = glob.glob(os.path.join(outdir, '*.fz'))
     flist.sort()    
     _patch_raw_headers(flist)
+    biasexps = _get_bias_expnums(flist, as_string=True)
 
+    print(biasexps)
 
     # figure out the exposure ID's of the master bias frames downloaded
     #    either from the API query result or else from the headers
