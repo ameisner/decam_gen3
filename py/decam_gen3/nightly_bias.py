@@ -7,6 +7,36 @@ Pipeline driver for preparing creation of a master bias for a given night.
 """
 
 import argparse
+import decam_reduce.util as util
+import os
+
+def _proc(caldat, repo_name='repo', script_name='launch.sh'):
+    """
+    prepare creation of a master bias for a given night
+
+    """
+
+    # download the raw bias frames for the night
+    #    what if no master bias frames available?
+    #    verify the checksums?
+
+    nightsum = util.query_night(caldat)
+
+    result = util.select_raw_zeros(nightsum, n_max=5)
+
+    outdir = 'bias'
+
+    assert(os.path.exists(outdir))
+    util.download_images(result, outdir)
+
+
+
+    # figure out the exposure ID's of the master bias frames downloaded
+    #    either from the API query result or else from the headers
+    # patch the biases for e.g., missing HUMIDITY
+    # generate the launch script
+
+
 
 if __name__ == "__main__":
     descr = 'prepare creation of a master bias for a given night'
@@ -22,4 +52,9 @@ if __name__ == "__main__":
     parser.add_argument('--script_name', default='launch.sh', type=str,
                         help="output name for bias creation script")
 
+    # make "-j" parallelism level an optional argument as well
+
     args = parser.parse_args()
+
+    _proc(args.caldat[0], repo_name=args.repo_name,
+          script_name=args.script_name)
